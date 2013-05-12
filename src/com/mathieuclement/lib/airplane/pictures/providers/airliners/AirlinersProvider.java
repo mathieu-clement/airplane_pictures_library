@@ -11,7 +11,10 @@ import java.io.IOException;
 import java.net.URL;
 import java.text.DateFormat;
 import java.text.ParseException;
-import java.util.*;
+import java.util.Collection;
+import java.util.Date;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * @author Mathieu Clément
@@ -50,9 +53,8 @@ public class AirlinersProvider implements AirplanePictureProvider {
             AirplanePicture airplanePicture = null;
             List<AirplanePicture> airplanePictures = new LinkedList<AirplanePicture>();
 
-            int index = -1;
-            while (index < links.size() - 1) {
-                index++;
+            int index = 0;
+            while (index < links.size()) {
                 Element element = links.get(index);
                 switch (index % 8) {
                     case 0: // operator
@@ -104,19 +106,23 @@ public class AirlinersProvider implements AirplanePictureProvider {
                         airplanePictures.add(airplanePicture);
                         break;
                 } // end switch
+                index++;
             } // end while
 
             /** Images URL */
             Elements smallImagesElements = document.select("img[src^=http://cdn-www.airliners.net/aviation-photos/small/]");
-            ListIterator<Element> smallImgItr = smallImagesElements.listIterator();
-            while (smallImgItr.hasNext()) {
-                int imgIndex = smallImgItr.nextIndex();
-                Element element = smallImgItr.next();
+            if (smallImagesElements.size() != airplanePictures.size()) {
+                throw new ParseException("The two parsing methods gave a different number of results.", 0);
+            }
+            int imgIndex = 0;
+            while (imgIndex < smallImagesElements.size()) { // if we found too much images here
+                Element element = smallImagesElements.get(imgIndex);
                 String imgUrl = element.attr("src");
                 airplanePictures.get(imgIndex).setImageUrl(AirplanePicture.PictureSize.SMALL, new URL(imgUrl));
                 airplanePictures.get(imgIndex).setImageUrl(AirplanePicture.PictureSize.MEDIUM, new URL(imgUrl.replace("small", "middle")));
                 airplanePictures.get(imgIndex).setImageUrl(AirplanePicture.PictureSize.LARGE, new URL(imgUrl.replace("small", "photos")));
                 airplanePictures.get(imgIndex).setImageUrl(AirplanePicture.PictureSize.ORIGINAL, null);
+                imgIndex++;
             }
 
             return airplanePictures;
